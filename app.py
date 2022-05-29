@@ -1,14 +1,13 @@
 import platform
-import base64
 import os
 
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 
 app = Flask(__name__)
 
 
 @app.route("/")
-def hello_world():
+def main():
     """Responds to any HTTP request.
     Args:
         request (flask.Request): HTTP request object.
@@ -19,38 +18,24 @@ def hello_world():
     """
     os_type = platform.system()
     if os_type == "Linux":
-        client_auth = request.headers.get('CSOAUTH')
-        if not(client_auth) or check_auth(client_auth) is False:
+        creds = request.get_json().get("identification")
+        if not(creds) or check_auth(creds) is False:
             return Response("Please check auth creds.", 401)
 
-    request_json = request.get_json()
-    if request.args and "message" in request.args:
-        return request.args.get("message")
-    elif request_json and "message" in request_json:
-        return request_json["message"]
-    else:
-        return "Hello World!"
+    car_id = creds.get("identification").get("car_id")
+    latitude = request.get_json()["location"]["latitude"]
+    longitude = request.get_json()["location"]["longitude"]
+    location_text = f"Location for {car_id} is {latitude}, {longitude}"
+    print(location_text)
+    return jsonify(request.get_json())
 
 
-def check_auth(client_auth) -> bool:
+def check_auth(creds) -> bool:
     """This function is used to authenticate requests.
-    When creating a new service (Cloud Functions or Cloud Run),
-    remember to generate a password (GUID) and save the credentials in Google Secret Manager.
-
-    GUID's can be generated using this code:
-    import uuid
-    str(uuid.uuid4())
-
-    The name of the Cloud Secret should be formatted as f"CSOAUTH_{SERVICE_NAME}".
-    Secret names should be all caps and unserscores in place of spaces and dashes.
-    Example: If the name of this service "random-etl-service",
-    the authentication password should be saved as: "CSOAUTH_RANDOM_ETL_SERVICE".
-
-    This makes it easy to predect secret names if you know
-    the service name and have accesss to Secret Manager.
     """
-    CSOAUTH = os.getenv(f"CSOAUTH_{os.getenv('K_SERVICE').upper().replace('-', '_')}")
-    if CSOAUTH == client_auth:
+    username = os.getenv("STREET_SWEEPING_ALERT_USERNAME")
+    password = os.getenv("STREET_SWEEPING_ALERT_PASSWORD")
+    if creds.get("username") == username and creds.get("password") == password:
         return True
     else:
         return False
