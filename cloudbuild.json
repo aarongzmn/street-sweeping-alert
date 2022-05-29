@@ -1,0 +1,38 @@
+{
+    "steps": [
+    {
+      "name": "gcr.io/cloud-builders/docker",
+      "args": [
+        "build",
+        "-t",
+        "gcr.io/big-blend-219115/{CLOUD-RUN-SERVICE-NAME}",
+        "."
+      ]
+    },
+    {
+      "name": "gcr.io/cloud-builders/docker",
+      "args": [
+        "push",
+        "gcr.io/big-blend-219115/{CLOUD-RUN-SERVICE-NAME}"
+      ]
+    },
+    {
+      "name": "gcr.io/cloud-builders/gcloud",
+      "args": [
+        "run",
+        "deploy",
+        "{CLOUD-RUN-SERVICE-NAME}",
+        "--image",
+        "gcr.io/big-blend-219115/{CLOUD-RUN-SERVICE-NAME}",
+        "--region",
+        "us-central1",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated"
+      ]
+    }
+    ],
+    "images": [
+      "gcr.io/big-blend-219115/{CLOUD-RUN-SERVICE-NAME}"
+    ]
+  }
