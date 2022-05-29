@@ -6,7 +6,7 @@ from flask import Flask, request, Response, jsonify
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.route("/", methods=['POST'])
 def main():
     """Responds to any HTTP request.
     Args:
@@ -16,15 +16,15 @@ def main():
         Response object using
         `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
     """
-    os_type = platform.system()
-    if os_type == "Linux":
-        creds = request.get_json().get("identification")
-        if not(creds) or check_auth(creds) is False:
-            return Response("Please check auth creds.", 401)
-
-    car_id = creds.get("identification").get("car_id")
-    latitude = request.get_json()["location"]["latitude"]
-    longitude = request.get_json()["location"]["longitude"]
+    # os_type = platform.system()
+    # if os_type == "Linux":
+    #     creds = request.get_json().get("identification")
+    #     if not(creds) or check_auth(creds) is False:
+    #         return Response("Please check auth creds.", 401)
+    request_json = request.get_json()
+    car_id = request_json["identification"]["car_id"]
+    latitude = request_json["location"]["latitude"]
+    longitude = request_json["location"]["longitude"]
     location_text = f"Location for {car_id} is {latitude}, {longitude}"
     print(location_text)
     return jsonify(request.get_json())
