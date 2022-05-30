@@ -1,41 +1,58 @@
 import platform
 import os
 
-from flask import Flask, request, Response, jsonify
+from flask import Flask, request
 
 app = Flask(__name__)
 
 
-@app.route("/", methods=['POST'])
+@app.route("/", methods=["POST"])
 def main():
-    """Responds to any HTTP request.
-    Args:
-        request (flask.Request): HTTP request object.
-    Returns:
-        The response text or any set of values that can be turned into a
-        Response object using
-        `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
+    """Process location data and save vehicle location.
     """
-    # os_type = platform.system()
-    # if os_type == "Linux":
-    #     creds = request.get_json().get("identification")
-    #     if not(creds) or check_auth(creds) is False:
-    #         return Response("Please check auth creds.", 401)
-    request_json = request.get_json()
-    car_id = request_json["identification"]["car_id"]
-    latitude = request_json["location"]["latitude"]
-    longitude = request_json["location"]["longitude"]
-    location_text = f"Location for {car_id} is {latitude}, {longitude}"
-    print(location_text)
-    return jsonify(request.get_json())
+    resp = {
+        "data": None,
+        "errors": []
+    }
+    if request.method == "POST":
+        if request.authorization is None or check_auth(request.authorization) is False:
+            resp["errors"] = "Please check auth creds."
+            return resp, 401
+        else:
+            if request.get_json():
+                request_json = request.get_json()
+                if "carId" in request_json:
+                    if "latitude" in request_json["location"] and "longitude" in request_json["location"]:
+                        car_id = request_json["carId"]
+                        latitude = request_json["location"]["latitude"]
+                        longitude = request_json["location"]["longitude"]
+                        location_text = f"Location for {car_id} is {latitude}, {longitude}"
+                        print(location_text)
+                        resp["data"] = location_text
+                        return resp, 200
+                    else:
+                        resp["errors"] = "Both 'latitude' and 'latitude' are required."
+                else:
+                    resp["errors"] = "No 'carId' found."
+            else:
+                resp["errors"] = "No JSON data found."
+            return resp, 400
 
 
-def check_auth(creds) -> bool:
+def check_auth(client_auth) -> bool:
     """This function is used to authenticate requests.
     """
-    username = os.getenv("STREET_SWEEPING_ALERT_USERNAME")
-    password = os.getenv("STREET_SWEEPING_ALERT_PASSWORD")
-    if creds.get("username") == username and creds.get("password") == password:
+    client_user = client_auth.username
+    client_pass = client_auth.password
+
+    if platform.system() == "Linux":
+        server_user = os.getenv("STREET_SWEEPING_ALERT_USERNAME")
+        server_pass = os.getenv("STREET_SWEEPING_ALERT_PASSWORD")
+    else:
+        server_user = "username"
+        server_pass = "password"
+
+    if server_user == client_user and server_pass == client_pass:
         return True
     else:
         return False
